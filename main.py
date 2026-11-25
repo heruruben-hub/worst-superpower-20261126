@@ -48,14 +48,27 @@ MIN_CHARS = 1
 MAX_CHARS = 140
 
 
+def _validate(text: str) -> None:
+    """Raise unless text passes the sealed scorer's gate.
+
+    The gate counts characters (not bytes): 1 to 140, not only white
+    space, and the entry is one line, so no line break and no stray
+    leading or trailing space inflating the count.
+    """
+    assert isinstance(text, str)
+    assert MIN_CHARS <= len(text) <= MAX_CHARS, (
+        f"entry must be {MIN_CHARS}-{MAX_CHARS} chars, got {len(text)}"
+    )
+    assert text.strip(), "entry must not be only white space"
+    assert text == text.strip(), "entry must not carry stray edge space"
+    assert "\n" not in text and "\r" not in text, (
+        "entry must be a single line"
+    )
+
+
 def main() -> None:
     # Gate checks, mirroring the sealed scorer.
-    assert isinstance(ENTRY, str)
-    assert MIN_CHARS <= len(ENTRY) <= MAX_CHARS, (
-        f"entry must be {MIN_CHARS}-{MAX_CHARS} chars, got {len(ENTRY)}"
-    )
-    assert ENTRY.strip(), "entry must not be only white space"
-    assert "\n" not in ENTRY, "entry must be a single line"
+    _validate(ENTRY)
 
     encoded = ENTRY.encode("utf-8")
     os.makedirs(os.path.dirname(OUTPUT_PATH), exist_ok=True)
@@ -67,8 +80,7 @@ def main() -> None:
         raw = f.read()
     text = raw.decode("utf-8")
     assert text == ENTRY, f"round-trip mismatch: {text!r} != {ENTRY!r}"
-    assert MIN_CHARS <= len(text) <= MAX_CHARS and text.strip()
-    assert "\n" not in text
+    _validate(text)
 
     print(
         f"Wrote {len(text)} characters ({len(encoded)} bytes) to {OUTPUT_PATH}"
